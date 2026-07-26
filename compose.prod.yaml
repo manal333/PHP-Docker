@@ -36,6 +36,18 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+        
+  supervisor:
+    build:
+      context: .
+      dockerfile: docker/supervisor/Dockerfile
+    volumes:
+      - laravel-storage-production:/var/www/storage
+    depends_on:
+      - php-fpm
+      - mysql
+    networks:
+      - laravel-production
 
   php-cli:
     build:

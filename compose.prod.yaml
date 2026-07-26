@@ -1,0 +1,78 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./docker/production/nginx/Dockerfile
+    restart: unless-stopped 
+    volumes:
+      
+      - laravel-storage-production:/var/www/storage:ro
+    networks:
+      - laravel-production
+    ports:
+      
+      - "8088:80"
+    depends_on:
+      php-fpm:
+        condition: service_healthy 
+
+  php-fpm:
+    build:
+      context: .
+      dockerfile: ./docker/common/php-fpm/Dockerfile
+      target: production 
+    restart: unless-stopped
+    volumes:
+      - laravel-storage-production:/var/www/storage # Mount the storage volume
+    env_file:
+      - .env
+    networks:
+      - laravel-production
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  php-cli:
+    build:
+      context: .
+      dockerfile: ./docker/php-cli/Dockerfile
+    tty: true 
+    stdin_open: true 
+    env_file:
+      - .env
+    networks:
+      - laravel-production
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+
+    volumes:
+      - mysql-data-production:/var/lib/mysql
+
+    networks:
+      - laravel-production
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p${DB_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+networks:
+
+  laravel-production:
+
+volumes:
+  mysql-data-production:
+  laravel-storage-production:

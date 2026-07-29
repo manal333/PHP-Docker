@@ -12,7 +12,7 @@ COPY . .
 RUN npm run production
 
 
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 COPY ./docker/production/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /var/www/public /var/www/public

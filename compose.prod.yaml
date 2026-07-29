@@ -77,7 +77,7 @@ services:
       - laravel-production
 
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p${DB_ROOT_PASSWORD} || exit 1"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${DB_USERNAME} -p${DB_PASSWORD} --silent || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

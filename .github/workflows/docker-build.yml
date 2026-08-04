@@ -12,6 +12,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0

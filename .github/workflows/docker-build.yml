@@ -23,11 +23,35 @@ jobs:
 
       - name: Build Docker images
         run: docker compose -f compose.prod.yaml build
-        
-      - name: Run Trivy image scan
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-web:latest
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Scan php-fpm image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: php-docker-php-fpm:latest
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Scan supervisor image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Scan php-cli image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
           severity: HIGH,CRITICAL
           exit-code: '0'

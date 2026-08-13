@@ -20,13 +20,16 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: Install Semgrep
+        run: pip install semgrep
+
       - name: Run Semgrep
         run: |
           semgrep ci \
-            --config p/security-audit \
-            --config p/php \
-            --json \
-            --output semgrep-report.json
+          --config p/security-audit \
+          --config p/php \
+          --json \
+          --output semgrep-report.json
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0

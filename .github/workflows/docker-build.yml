@@ -21,11 +21,12 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Install Semgrep
-        run: pip install semgrep
+        run: |
+          ~/actions-runner/semgrep-venv/bin/pip install semgrep
 
       - name: Run Semgrep
         run: |
-          semgrep ci \
+          ~/actions-runner/semgrep-venv/bin/semgrep ci \
           --config p/security-audit \
           --config p/php \
           --json \

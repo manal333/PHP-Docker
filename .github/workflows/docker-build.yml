@@ -1,4 +1,4 @@
-name: Security Scan
+name: Docker Build
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  security-scan:
+  build:
     runs-on: self-hosted
 
     steps:
@@ -27,10 +27,10 @@ jobs:
       - name: Run Semgrep
         run: |
           ~/actions-runner/semgrep-venv/bin/semgrep ci \
-            --config p/security-audit \
-            --config p/php \
-            --json \
-            --output semgrep-report.json
+          --config p/security-audit \
+          --config p/php \
+          --json \
+          --output semgrep-report.json
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -42,6 +42,49 @@ jobs:
           output: trivy-fs-report.json
           exit-code: '0'
 
+      - name: Build Docker images
+        run: docker compose -f compose.prod.yaml build
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-web:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-web-report.json
+          exit-code: '0'
+
+      - name: Scan php-fpm image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-fpm:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-fpm-report.json
+          exit-code: '0'
+
+      - name: Scan supervisor image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-supervisor-report.json
+          exit-code: '0'
+
+      - name: Scan php-cli image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-cli-report.json
+          exit-code: '0'
+
       - name: Upload security reports
         uses: actions/upload-artifact@v4
         with:
@@ -49,3 +92,7 @@ jobs:
           path: |
             semgrep-report.json
             trivy-fs-report.json
+            trivy-web-report.json
+            trivy-php-fpm-report.json
+            trivy-supervisor-report.json
+            trivy-php-cli-report.json

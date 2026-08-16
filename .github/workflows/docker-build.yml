@@ -27,10 +27,10 @@ jobs:
       - name: Run Semgrep
         run: |
           ~/actions-runner/semgrep-venv/bin/semgrep ci \
-          --config p/security-audit \
-          --config p/php \
-          --json \
-          --output semgrep-report.json
+            --config p/security-audit \
+            --config p/php \
+            --json \
+            --output semgrep-report.json
 
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -44,6 +44,40 @@ jobs:
 
       - name: Build Docker images
         run: docker compose -f compose.prod.yaml build
+
+      - name: Start application
+        run: docker compose -f compose.prod.yaml up -d
+
+      - name: Wait for application
+        run: |
+          echo "Waiting for application to become ready..."
+
+          for i in {1..30}; do
+            if curl -fs http://localhost:8088 > /dev/null; then
+              echo "Application is ready!"
+              exit 0
+            fi
+
+            echo "Application is not ready yet... attempt $i/30"
+            sleep 5
+          done
+
+          echo "Application did not become ready."
+
+          echo "===== Docker Compose Status ====="
+          docker compose -f compose.prod.yaml ps
+
+          echo "===== Docker Compose Logs ====="
+          docker compose -f compose.prod.yaml logs
+
+          exit 1
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'http://localhost:8088'
+          allow_issue_writing: false
+          cmd_options: '-J zap-report.json'
 
       - name: Scan web image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -86,6 +120,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload security reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-scan-reports
@@ -96,3 +131,9 @@ jobs:
             trivy-php-fpm-report.json
             trivy-supervisor-report.json
             trivy-php-cli-report.json
+            zap-report.json
+          if-no-files-found: ignore
+
+      - name: Stop application
+        if: always()
+        run: docker compose -f compose.prod.yaml down

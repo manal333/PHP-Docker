@@ -47,6 +47,7 @@ jobs:
         run: |
           rsync -av --delete \
             --exclude='.env' \
+            --exclude='.cache/' \
             ./ /var/www/PHP-Docker/
 
       - name: Build Docker images

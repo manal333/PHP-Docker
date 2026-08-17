@@ -10,6 +10,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -42,13 +43,24 @@ jobs:
           output: trivy-fs-report.json
           exit-code: '0'
 
+      - name: Sync application files
+        run: |
+          rsync -av --delete \
+            --exclude='.env' \
+            ./ /var/www/PHP-Docker/
+
       - name: Build Docker images
-        run: docker compose -f compose.prod.yaml build
+        working-directory: /var/www/PHP-Docker
+        run: |
+          docker compose -f compose.prod.yaml build
 
       - name: Start application
-        run: docker compose -f compose.prod.yaml up -d
+        working-directory: /var/www/PHP-Docker
+        run: |
+          docker compose -f compose.prod.yaml up -d
 
       - name: Wait for application
+        working-directory: /var/www/PHP-Docker
         run: |
           echo "Waiting for application to become ready..."
 
@@ -136,4 +148,6 @@ jobs:
 
       - name: Stop application
         if: always()
-        run: docker compose -f compose.prod.yaml down
+        working-directory: /var/www/PHP-Docker
+        run: |
+          docker compose -f compose.prod.yaml down

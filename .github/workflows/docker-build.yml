@@ -89,7 +89,6 @@ jobs:
         with:
           target: 'http://localhost:8088'
           allow_issue_writing: false
-          cmd_options: '-J zap-report.json'
 
       - name: Scan web image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -143,7 +142,6 @@ jobs:
             trivy-php-fpm-report.json
             trivy-supervisor-report.json
             trivy-php-cli-report.json
-            zap-report.json
           if-no-files-found: ignore
 
       - name: Stop application

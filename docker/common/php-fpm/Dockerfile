@@ -1,7 +1,7 @@
 FROM php:8.0-fpm AS builder
 
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y  && apt-get install -y --no-install-recommends \
     curl \
     unzip \
     libonig-dev \
@@ -27,7 +27,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 FROM php:8.0-fpm AS production
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y  && apt-get install -y --no-install-recommends \
     libicu-dev \
     libzip-dev \
     libfcgi-bin \

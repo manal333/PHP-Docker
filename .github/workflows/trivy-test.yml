@@ -1,0 +1,33 @@
+name: Trivy Test
+
+on:
+  push:
+    branches:
+      - security/trivy-fixes
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build PHP-FPM image
+        run: docker compose -f compose.prod.yaml build php-fpm
+
+      - name: Scan php-fpm image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-fpm:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-fpm-report.json
+          exit-code: '0'
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-php-fpm-report.json

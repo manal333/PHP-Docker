@@ -13,21 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build PHP-FPM image
-        run: docker compose -f compose.prod.yaml build php-fpm
-
-      - name: Check curl and libcurl packages
-        run: |
-          docker run --rm php-docker-php-fpm:latest sh -c '
-            echo "=== curl ==="
-            dpkg-query -W -f="${Package} ${Version}\n" 2>/dev/null | grep "^curl " || true
-
-            echo "=== libcurl4 ==="
-            dpkg-query -W -f="${Package} ${Version}\n" 2>/dev/null | grep "^libcurl4 " || true
-
-            echo "=== Reverse dependencies of libcurl4 ==="
-            apt-cache rdepends libcurl4 || true
-          '
+      - name: Build images
+        run: docker compose -f compose.prod.yaml build 
 
       - name: Scan php-fpm image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -38,9 +25,32 @@ jobs:
           format: json
           output: trivy-php-fpm-report.json
           exit-code: '0'
+      - name: Scan supervisor image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-supervisor-report.json
+          exit-code: '0'
 
-      - name: Upload Trivy report
+      - name: Scan php-cli image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-cli-report.json
+          exit-code: '0'
+
+
+      - name: Upload Trivy reports
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
-          path: trivy-php-fpm-report.json
+          path: |
+            trivy-php-fpm-report.json
+            trivy-supervisor-report.json
+            trivy-php-cli-report.json

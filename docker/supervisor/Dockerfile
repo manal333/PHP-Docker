@@ -1,6 +1,6 @@
 FROM php:8.0-cli
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y  && apt-get install -y \
     supervisor \
     libzip-dev \
     unzip \

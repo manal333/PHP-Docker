@@ -6,7 +6,12 @@ on:
       - main
 
 jobs:
-  build:
+
+  # ============================================================
+  # 1. SonarCloud Scan
+  # ============================================================
+  sonarcloud:
+    name: SonarCloud Scan
     runs-on: self-hosted
 
     steps:
@@ -21,6 +26,46 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+
+  # ============================================================
+  # 2. Trivy Filesystem Scan
+  # ============================================================
+  trivy-fs:
+    name: Trivy Filesystem Scan
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-fs-report.json
+          exit-code: '0'
+
+
+  # ============================================================
+  # 3. Semgrep Scan
+  # ============================================================
+  semgrep:
+    name: Semgrep Scan
+    runs-on: self-hosted
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Install Semgrep
         run: |
           ~/actions-runner/semgrep-venv/bin/pip install semgrep
@@ -33,15 +78,24 @@ jobs:
             --json \
             --output semgrep-report.json
 
-      - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.36.0
+
+  # ============================================================
+  # 4. Build Docker Images
+  # ============================================================
+  build:
+    name: Build Docker Images
+    runs-on: self-hosted
+    needs:
+      - sonarcloud
+      - trivy-fs
+      - semgrep
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          scan-type: fs
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          format: json
-          output: trivy-fs-report.json
-          exit-code: '0'
+          fetch-depth: 0
 
       - name: Sync application files
         run: |
@@ -54,6 +108,133 @@ jobs:
         working-directory: /var/www/PHP-Docker
         run: |
           docker compose -f compose.prod.yaml build
+
+
+  # ============================================================
+  # 5. Trivy Web Image Scan
+  # ============================================================
+  trivy-web:
+    name: Trivy Web Image
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-web:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-web-report.json
+          exit-code: '0'
+
+      - name: Upload web image report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-web-report
+          path: trivy-web-report.json
+          if-no-files-found: ignore
+
+
+  # ============================================================
+  # 6. Trivy PHP-FPM Image Scan
+  # ============================================================
+  trivy-php-fpm:
+    name: Trivy PHP-FPM Image
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+
+      - name: Scan php-fpm image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-fpm:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-fpm-report.json
+          exit-code: '0'
+
+      - name: Upload php-fpm image report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-php-fpm-report
+          path: trivy-php-fpm-report.json
+          if-no-files-found: ignore
+
+
+  # ============================================================
+  # 7. Trivy Supervisor Image Scan
+  # ============================================================
+  trivy-supervisor:
+    name: Trivy Supervisor Image
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+
+      - name: Scan supervisor image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-supervisor-report.json
+          exit-code: '0'
+
+      - name: Upload supervisor image report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-supervisor-report
+          path: trivy-supervisor-report.json
+          if-no-files-found: ignore
+
+
+  # ============================================================
+  # 8. Trivy PHP-CLI Image Scan
+  # ============================================================
+  trivy-php-cli:
+    name: Trivy PHP-CLI Image
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+
+      - name: Scan php-cli image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-cli-report.json
+          exit-code: '0'
+
+      - name: Upload php-cli image report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-php-cli-report
+          path: trivy-php-cli-report.json
+          if-no-files-found: ignore
+
+
+  # ============================================================
+  # 9. Deploy Application + Health Check
+  # ============================================================
+  deploy:
+    name: Deploy & Health Check
+    runs-on: self-hosted
+    needs:
+      - trivy-web
+      - trivy-php-fpm
+      - trivy-supervisor
+      - trivy-php-cli
+
+    steps:
 
       - name: Start application
         working-directory: /var/www/PHP-Docker
@@ -85,64 +266,86 @@ jobs:
 
           exit 1
 
+
+  # ============================================================
+  # 10. DAST - OWASP ZAP
+  # ============================================================
+  dast:
+    name: DAST - OWASP ZAP
+    runs-on: self-hosted
+    needs: deploy
+
+    steps:
+
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: 'http://localhost:8088'
           allow_issue_writing: false
 
-      - name: Scan web image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: image
-          image-ref: php-docker-web:latest
-          severity: HIGH,CRITICAL
-          format: json
-          output: trivy-web-report.json
-          exit-code: '0'
 
-      - name: Scan php-fpm image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: image
-          image-ref: php-docker-php-fpm:latest
-          severity: HIGH,CRITICAL
-          format: json
-          output: trivy-php-fpm-report.json
-          exit-code: '0'
+  # ============================================================
+  # 11. Upload Security Reports & Cleanup
+  # ============================================================
+  reports:
+    name: Upload Security Reports & Cleanup
+    runs-on: self-hosted
+    needs:
+      - sonarcloud
+      - trivy-fs
+      - semgrep
+      - trivy-web
+      - trivy-php-fpm
+      - trivy-supervisor
+      - trivy-php-cli
+      - deploy
+      - dast
+    if: always()
 
-      - name: Scan supervisor image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: image
-          image-ref: php-docker-supervisor:latest
-          severity: HIGH,CRITICAL
-          format: json
-          output: trivy-supervisor-report.json
-          exit-code: '0'
+    steps:
 
-      - name: Scan php-cli image
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Download Trivy FS report
+        uses: actions/download-artifact@v4
         with:
-          scan-type: image
-          image-ref: php-docker-php-cli:latest
-          severity: HIGH,CRITICAL
-          format: json
-          output: trivy-php-cli-report.json
-          exit-code: '0'
+          name: trivy-fs-report
+          path: reports
+
+      - name: Download Semgrep report
+        uses: actions/download-artifact@v4
+        with:
+          name: semgrep-report
+          path: reports
+
+      - name: Download Trivy web report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-web-report
+          path: reports
+
+      - name: Download Trivy PHP-FPM report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-php-fpm-report
+          path: reports
+
+      - name: Download Trivy Supervisor report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-supervisor-report
+          path: reports
+
+      - name: Download Trivy PHP-CLI report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-php-cli-report
+          path: reports
 
       - name: Upload security reports
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-scan-reports
           path: |
-            semgrep-report.json
-            trivy-fs-report.json
-            trivy-web-report.json
-            trivy-php-fpm-report.json
-            trivy-supervisor-report.json
-            trivy-php-cli-report.json
+            reports/*.json
           if-no-files-found: ignore
 
       - name: Stop application

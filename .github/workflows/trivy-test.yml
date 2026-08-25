@@ -35,3 +35,57 @@ jobs:
           name: trivy-fs-report
           path: trivy-fs-report.json
           if-no-files-found: ignore
+
+  trivy-images:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose -f compose.prod.yaml build
+
+      - name: Scan php-fpm image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-fpm:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-fpm-report.json
+          exit-code: '0'
+          trivyignores: .trivyignore
+
+      - name: Scan supervisor image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-supervisor-report.json
+          exit-code: '0'
+          trivyignores: .trivyignore
+
+      - name: Scan php-cli image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
+          severity: HIGH,CRITICAL
+          format: json
+          output: trivy-php-cli-report.json
+          exit-code: '0'
+          trivyignores: .trivyignore
+
+      - name: Upload Trivy reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: |
+            trivy-php-fpm-report.json
+            trivy-supervisor-report.json
+            trivy-php-cli-report.json
+          if-no-files-found: ignore

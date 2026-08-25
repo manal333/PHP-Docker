@@ -49,7 +49,8 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-fs-report.json
-          exit-code: '0'
+          exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Upload Trivy FS report
         uses: actions/upload-artifact@v4
@@ -142,7 +143,8 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-web-report.json
-          exit-code: '0'
+          exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Upload web image report
         uses: actions/upload-artifact@v4
@@ -170,7 +172,8 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-php-fpm-report.json
-          exit-code: '0'
+          exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Upload php-fpm image report
         uses: actions/upload-artifact@v4
@@ -198,7 +201,8 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-supervisor-report.json
-          exit-code: '0'
+          exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Upload supervisor image report
         uses: actions/upload-artifact@v4
@@ -226,7 +230,8 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-php-cli-report.json
-          exit-code: '0'
+          exit-code: '1'
+          trivyignores: .trivyignore
 
       - name: Upload php-cli image report
         uses: actions/upload-artifact@v4

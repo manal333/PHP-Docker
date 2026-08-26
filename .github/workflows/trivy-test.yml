@@ -34,6 +34,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-fs-report.sarif
+          limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
 
@@ -74,6 +75,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-php-fpm-report.sarif
+          limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
 
@@ -97,6 +99,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-supervisor-report.sarif
+          limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
 
@@ -120,6 +123,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-php-cli-report.sarif
+          limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
 

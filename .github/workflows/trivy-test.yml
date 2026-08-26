@@ -12,7 +12,7 @@ permissions:
 jobs:
 
   # =========================
-  # Trivy Filesystem Scan
+  # Trivy Filesystem Security Scan
   # =========================
 
   trivy-fs:

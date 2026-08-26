@@ -34,7 +34,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-fs-report.sarif
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload Trivy FS SARIF report
@@ -74,7 +74,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-php-fpm-report.sarif
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload PHP-FPM SARIF report
@@ -97,7 +97,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-supervisor-report.sarif
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload Supervisor SARIF report
@@ -120,7 +120,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-php-cli-report.sarif
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload PHP-CLI SARIF report

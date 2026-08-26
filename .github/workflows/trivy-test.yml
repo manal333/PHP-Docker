@@ -34,7 +34,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: sarif
           output: trivy-fs-report.sarif
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload Trivy FS SARIF report
@@ -43,12 +43,6 @@ jobs:
         with:
           sarif_file: trivy-fs-report.sarif
           category: trivy-fs
-      - name: Upload Trivy FS SARIF as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-        name: trivy-fs-sarif
-        path: trivy-fs-report.sarif
 
 
   # =========================

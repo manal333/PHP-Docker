@@ -86,6 +86,17 @@ jobs:
             --json \
             --output semgrep-report.json
 
+      - name: Check Semgrep findings
+        run: |
+          findings=$(jq '.results | length' semgrep-report.json)
+
+          echo "Semgrep findings: $findings"
+
+          if [ "$findings" -gt 0 ]; then
+            echo "::error::Semgrep found $findings issue(s)"
+            exit 1
+          fi
+
       - name: Upload Semgrep report
         uses: actions/upload-artifact@v4
         with:

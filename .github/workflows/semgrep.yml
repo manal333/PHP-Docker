@@ -1,0 +1,40 @@
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches:
+      - security/semgrep-check
+
+jobs:
+
+  semgrep:
+    name: Semgrep Scan
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Semgrep
+        run: |
+          python3 -m pip install semgrep
+
+      - name: Run Semgrep
+        run: |
+          semgrep ci \
+            --config p/security-audit \
+            --config p/php \
+            --json \
+            --output semgrep-report.json \
+            --error
+
+      - name: Upload Semgrep report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
+          if-no-files-found: ignore

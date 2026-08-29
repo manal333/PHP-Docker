@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Semgrep
         run: |
-          semgrep ci \
+          semgrep scan \
             --config p/security-audit \
             --config p/php \
             --json \

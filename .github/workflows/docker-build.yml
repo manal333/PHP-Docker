@@ -80,25 +80,16 @@ jobs:
 
       - name: Run Semgrep
         run: |
-          ~/actions-runner/semgrep-venv/bin/semgrep ci \
+          ~/actions-runner/semgrep-venv/bin/semgrep scan \
             --config p/security-audit \
             --config p/php \
+            --error \
             --json \
             --output semgrep-report.json
 
-      - name: Check Semgrep findings
-        run: |
-          findings=$(jq '.results | length' semgrep-report.json)
-
-          echo "Semgrep findings: $findings"
-
-          if [ "$findings" -gt 0 ]; then
-            echo "::error::Semgrep found $findings issue(s)"
-            exit 1
-          fi
-
       - name: Upload Semgrep report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: semgrep-report
           path: semgrep-report.json

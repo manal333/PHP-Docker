@@ -3,7 +3,7 @@ name: Semgrep Security Scan
 on:
   push:
     branches:
-      - security/semgrep-check
+      - security/semgrep
 
 jobs:
 

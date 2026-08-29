@@ -1,15 +1,6 @@
-name: Semgrep Security Scan
-
-on:
-  push:
-    branches:
-      - security/semgrep
-
-jobs:
-
-  semgrep:
+semgrep:
     name: Semgrep Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
 
@@ -20,29 +11,20 @@ jobs:
 
       - name: Install Semgrep
         run: |
-          python3 -m pip install semgrep
+          ~/actions-runner/semgrep-venv/bin/pip install semgrep
 
       - name: Run Semgrep
         run: |
-          semgrep ci \
+          ~/actions-runner/semgrep-venv/bin/semgrep scan \
             --config p/security-audit \
             --config p/php \
+            --error \
             --json \
-            --output semgrep-report.json 
-      - name: Check Semgrep findings
-        run: |
-          findings=$(jq '.results | length' semgrep-report.json)
-
-          echo "Semgrep findings: $findings"
-
-          if [ "$findings" -gt 0 ]; then
-            echo "::error::Semgrep found $findings issue(s)"
-            exit 1
-          fi
+            --output semgrep-report.json
 
       - name: Upload Semgrep report
-        if: always()
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: semgrep-report
           path: semgrep-report.json

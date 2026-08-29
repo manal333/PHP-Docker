@@ -28,8 +28,7 @@ jobs:
             --config p/security-audit \
             --config p/php \
             --json \
-            --output semgrep-report.json \
-            --error
+            --output semgrep-report.json 
       - name: Check Semgrep findings
         run: |
           findings=$(jq '.results | length' semgrep-report.json)

@@ -1,4 +1,13 @@
-semgrep:
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches:
+      - security/semgrep
+
+jobs:
+
+  semgrep:
     name: Semgrep Scan
     runs-on: self-hosted
 

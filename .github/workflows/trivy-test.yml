@@ -78,6 +78,7 @@ jobs:
           limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
+          flags: --ignore-eos-os
 
       - name: Upload PHP-FPM SARIF report
         if: always()
@@ -102,6 +103,7 @@ jobs:
           limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
+          flags: --ignore-eos-os
 
       - name: Upload Supervisor SARIF report
         if: always()
@@ -126,6 +128,7 @@ jobs:
           limit-severities-for-sarif: true
           exit-code: '1'
           trivyignores: .trivyignore
+          flags: --ignore-eos-os
 
       - name: Upload PHP-CLI SARIF report
         if: always()

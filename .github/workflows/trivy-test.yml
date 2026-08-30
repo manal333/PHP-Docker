@@ -5,15 +5,7 @@ on:
     branches:
       - security/trivy-fixes
 
-permissions:
-  contents: read
-  security-events: write
-
 jobs:
-
-  # =========================
-  # Trivy Filesystem Scan
-  # =========================
 
   trivy-fs:
     name: Trivy Filesystem Scan
@@ -32,40 +24,36 @@ jobs:
           scan-type: fs
           scan-ref: .
           severity: HIGH,CRITICAL
-          format: sarif
-          output: trivy-fs-report.sarif
-          limit-severities-for-sarif: true
+          format: json
+          output: trivy-fs-report.json
           exit-code: '1'
           trivyignores: .trivyignore
 
-      - name: Upload Trivy FS SARIF report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Upload Trivy FS report
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy-fs-report.sarif
-          category: trivy-fs
-
-
-  # =========================
-  # Trivy Docker Images
-  # =========================
+          name: trivy-fs-report
+          path: trivy-fs-report.json
+          if-no-files-found: ignore
 
   trivy-images:
-    name: Trivy Docker Images
     runs-on: ubuntu-latest
 
     steps:
 
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build images
         run: docker compose -f compose.prod.yaml build
 
-
-      # =========================
-      # PHP-FPM
-      # =========================
+      - name: Generate php-fpm SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: php-docker-php-fpm:latest
+          format: cyclonedx
+          output: sbom-php-fpm.json
 
       - name: Scan php-fpm image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -73,24 +61,18 @@ jobs:
           scan-type: image
           image-ref: php-docker-php-fpm:latest
           severity: HIGH,CRITICAL
-          format: sarif
-          output: trivy-php-fpm-report.sarif
-          limit-severities-for-sarif: true
+          format: json
+          output: trivy-php-fpm-report.json
           exit-code: '1'
           trivyignores: .trivyignore
-          trivy-opts: '--ignore-eos-os --skip-version-check'
 
-      - name: Upload PHP-FPM SARIF report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Generate supervisor SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          sarif_file: trivy-php-fpm-report.sarif
-          category: trivy-php-fpm
-
-
-      # =========================
-      # Supervisor
-      # =========================
+          scan-type: image
+          image-ref: php-docker-supervisor:latest
+          format: cyclonedx
+          output: sbom-supervisor.json
 
       - name: Scan supervisor image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -98,24 +80,18 @@ jobs:
           scan-type: image
           image-ref: php-docker-supervisor:latest
           severity: HIGH,CRITICAL
-          format: sarif
-          output: trivy-supervisor-report.sarif
-          limit-severities-for-sarif: true
+          format: json
+          output: trivy-supervisor-report.json
           exit-code: '1'
           trivyignores: .trivyignore
-          trivy-opts: '--ignore-eos-os --skip-version-check'
 
-      - name: Upload Supervisor SARIF report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Generate php-cli SBOM
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          sarif_file: trivy-supervisor-report.sarif
-          category: trivy-supervisor
-
-
-      # =========================
-      # PHP-CLI
-      # =========================
+          scan-type: image
+          image-ref: php-docker-php-cli:latest
+          format: cyclonedx
+          output: sbom-php-cli.json
 
       - name: Scan php-cli image
         uses: aquasecurity/trivy-action@v0.36.0
@@ -123,16 +99,20 @@ jobs:
           scan-type: image
           image-ref: php-docker-php-cli:latest
           severity: HIGH,CRITICAL
-          format: sarif
-          output: trivy-php-cli-report.sarif
-          limit-severities-for-sarif: true
+          format: json
+          output: trivy-php-cli-report.json
           exit-code: '1'
           trivyignores: .trivyignore
-          trivy-opts: '--ignore-eos-os --skip-version-check'
 
-      - name: Upload PHP-CLI SARIF report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
+      - name: Upload Trivy reports
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy-php-cli-report.sarif
-          category: trivy-php-cli
+          name: trivy-report
+          path: |
+            trivy-php-fpm-report.json
+            trivy-supervisor-report.json
+            trivy-php-cli-report.json
+            sbom-php-fpm.json
+            sbom-supervisor.json
+            sbom-php-cli.json
+          if-no-files-found: ignore

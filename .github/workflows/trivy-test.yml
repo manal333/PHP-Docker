@@ -63,7 +63,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-php-fpm-report.json
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Generate supervisor SBOM
@@ -82,7 +82,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-supervisor-report.json
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Generate php-cli SBOM
@@ -101,7 +101,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: json
           output: trivy-php-cli-report.json
-          exit-code: '0'
+          exit-code: '1'
           trivyignores: .trivyignore
 
       - name: Upload Trivy reports

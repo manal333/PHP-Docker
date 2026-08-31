@@ -1,0 +1,23 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - security/sonarQube-fixes
+
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
